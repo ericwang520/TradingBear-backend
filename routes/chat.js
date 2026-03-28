@@ -131,7 +131,7 @@ const MAX_TOOL_LOOPS = 15;
 
 // SSE-based agent loop — streams status events to frontend in real-time
 router.post('/', async (req, res) => {
-  const { query, conversation_id, user_id } = req.body;
+  const { query, conversation_id, user_id, image } = req.body;
 
   if (!query || !user_id) {
     return res.status(400).json({ error: 'query and user_id are required' });
@@ -154,7 +154,19 @@ router.post('/', async (req, res) => {
       conversations.set(convId, []);
     }
     const history = conversations.get(convId);
-    history.push({ role: 'user', content: query });
+
+    // Build user message — with image if provided
+    if (image) {
+      history.push({
+        role: 'user',
+        content: [
+          { type: 'text', text: query },
+          { type: 'image_url', image_url: { url: image } },
+        ],
+      });
+    } else {
+      history.push({ role: 'user', content: query });
+    }
 
     sendEvent('status', { message: 'Thinking...', conversation_id: convId });
 
